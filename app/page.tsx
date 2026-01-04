@@ -60,6 +60,13 @@ export default function Home() {
           </a>
         </div>
       </main>
+      <footer className="w-full max-w-3xl flex items-center justify-center py-8 gap-4">
+        <a href="/privacy" className="text-sm text-zinc-500 hover:underline dark:text-zinc-400">
+          Privacy Policy
+        </a>
+        <span className="text-sm text-zinc-300 dark:text-zinc-600">|</span>
+        <span className="text-sm text-zinc-400 dark:text-zinc-500">© 2026 Gachar Shop</span>
+      </footer>
     </div>
   );
 }

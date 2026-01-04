@@ -26,6 +26,9 @@ export const authOptions: NextAuthOptions = {
             try {
                 const { email, name, image, id } = user;
                 const provider = account?.provider;
+                console.log("DEBUG: signIn callback triggered");
+                console.log("DEBUG: User:", JSON.stringify(user, null, 2));
+                console.log("DEBUG: Account:", JSON.stringify(account, null, 2));
                 const providerId = account?.providerAccountId;
 
                 if (!email && provider === 'line') {
@@ -33,19 +36,22 @@ export const authOptions: NextAuthOptions = {
                     // For now, allow but warn or rely on providerId
                 }
 
+
                 // Check if user exists
-                let dbUser = await User.findOne({
-                    $or: [
-                        { email: email },  // Check by email (common for Google)
-                        { providerId: providerId, provider: provider } // Check by provider ID
-                    ]
-                });
+                const matchers = [];
+                if (email) matchers.push({ email });
+                if (providerId) matchers.push({ providerId, provider });
+
+                let dbUser = null;
+                if (matchers.length > 0) {
+                    dbUser = await User.findOne({ $or: matchers });
+                }
 
                 if (!dbUser) {
                     // Create new user
                     dbUser = await User.create({
                         name: name,
-                        email: email, // Note: LINE might not provide email without permission
+                        ...(email && { email }), // Only include email if present
                         image: image,
                         provider: provider,
                         providerId: providerId,
@@ -65,7 +71,6 @@ export const authOptions: NextAuthOptions = {
 
                 // Pass user id to the token
                 user.id = dbUser._id.toString();
-                // @ts-expect-error - Adding dynamic property to user object
                 user.role = dbUser.role;
 
                 return true;
@@ -77,16 +82,13 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.id = user.id;
-                // @ts-expect-error - reading dynamic property
                 token.role = user.role;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                // @ts-expect-error - adding dynamic property to session
                 session.user.id = token.id as string;
-                // @ts-expect-error - adding dynamic property to session
                 session.user.role = token.role as string;
             }
             return session;
