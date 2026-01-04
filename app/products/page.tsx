@@ -4,6 +4,8 @@ import Product from '../../models/Product';
 import Category from '../../models/Category';
 import ProductList from '../../components/ProductList';
 
+export const dynamic = 'force-dynamic';
+
 async function getProducts(categorySlug?: string) {
     await connectToDatabase();
     const query: any = { status: 'active' };

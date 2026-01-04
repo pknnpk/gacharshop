@@ -3,6 +3,8 @@ import connectToDatabase from '../lib/db';
 import Product from '../models/Product';
 import LandingPage from '../components/LandingPage';
 
+export const dynamic = 'force-dynamic';
+
 async function getFeaturedProducts() {
   await connectToDatabase();
   // Fetch 4 items, status active
