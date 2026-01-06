@@ -46,6 +46,22 @@ export const dictionary = {
             electronics: 'Electronics',
             clothing: 'Clothing',
             'home-living': 'Home & Living',
+        },
+        cart: {
+            title: 'Shopping Cart',
+            empty: 'Your cart is empty',
+            continue_shopping: 'Continue Shopping',
+            quantity: 'Quantity',
+            total: 'Total',
+            subtotal: 'Subtotal',
+            checkout: 'Proceed to Checkout',
+            remove: 'Remove'
+        },
+        bottomNav: {
+            home: 'Home',
+            mall: 'Mall',
+            notify: 'Notifications',
+            me: 'Me'
         }
     },
     th: {
@@ -94,6 +110,22 @@ export const dictionary = {
             electronics: 'อิเล็กทรอนิกส์',
             clothing: 'เสื้อผ้าแฟชั่น',
             'home-living': 'บ้านและของใช้',
+        },
+        cart: {
+            title: 'ตะกร้าสินค้า',
+            empty: 'ตะกร้าของคุณว่างเปล่า',
+            continue_shopping: 'เลือกซื้อสินค้าต่อ',
+            quantity: 'จำนวน',
+            total: 'ยอดรวม',
+            subtotal: 'ยอดรวมย่อย',
+            checkout: 'ดำเนินการชำระเงิน',
+            remove: 'ลบ'
+        },
+        bottomNav: {
+            home: 'หน้าแรก',
+            mall: 'มอลล์',
+            notify: 'การแจ้งเตือน',
+            me: 'ฉัน'
         }
     },
 };

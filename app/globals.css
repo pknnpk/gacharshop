@@ -3,6 +3,11 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Gachar Colors */
+  --gachar-red: #E53935;
+  --gachar-blue: #1E88E5;
+  --gachar-yellow: #FDD835;
 }
 
 @theme inline {
@@ -10,6 +15,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-gachar-red: var(--gachar-red);
+  --color-gachar-blue: var(--gachar-blue);
+  --color-gachar-yellow: var(--gachar-yellow);
 }
 
 @media (prefers-color-scheme: dark) {

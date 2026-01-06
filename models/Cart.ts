@@ -12,6 +12,10 @@ const CartItemSchema = new Schema({
         required: true,
         min: 1,
     },
+    expiresAt: {
+        type: Date,
+        required: true,
+    },
 });
 
 const CartSchema = new Schema(

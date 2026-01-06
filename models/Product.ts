@@ -34,6 +34,14 @@ const ProductSchema = new Schema(
             required: true,
             default: 0,
         },
+        reservationTimeout: {
+            type: Number,
+            default: 15, // Minutes
+        },
+        quotaLimit: {
+            type: Number,
+            default: 0, // 0 = unlimited
+        },
         status: {
             type: String,
             enum: ['active', 'draft', 'archived'],

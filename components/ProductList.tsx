@@ -30,7 +30,7 @@ export default function ProductList({ products, categories, categorySlug }: Prod
                 <aside className="w-full md:w-64 space-y-6">
                     <div className="bg-white p-6 rounded-xl border shadow-sm">
                         <div className="flex items-center gap-2 mb-4">
-                            <Filter className="w-5 h-5 text-blue-600" />
+                            <Filter className="w-5 h-5 text-gachar-blue" />
                             <h2 className="font-bold text-gray-900">{t.filter_title}</h2>
                         </div>
 
@@ -40,7 +40,7 @@ export default function ProductList({ products, categories, categorySlug }: Prod
                                 <li>
                                     <Link
                                         href="/products"
-                                        className={`text-sm ${!categorySlug ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-blue-600'}`}
+                                        className={`text-sm ${!categorySlug ? 'text-gachar-blue font-medium' : 'text-gray-600 hover:text-gachar-blue'}`}
                                     >
                                         {t.title_all}
                                     </Link>
@@ -49,7 +49,7 @@ export default function ProductList({ products, categories, categorySlug }: Prod
                                     <li key={cat._id}>
                                         <Link
                                             href={`/products?category=${cat.slug}`}
-                                            className={`text-sm ${categorySlug === cat.slug ? 'text-blue-600 font-medium' : 'text-gray-600 hover:text-blue-600'}`}
+                                            className={`text-sm ${categorySlug === cat.slug ? 'text-gachar-blue font-medium' : 'text-gray-600 hover:text-gachar-blue'}`}
                                         >
                                             {getCategoryName(cat.slug)}
                                         </Link>
@@ -76,7 +76,7 @@ export default function ProductList({ products, categories, categorySlug }: Prod
                     {products.length === 0 ? (
                         <div className="text-center py-20 bg-gray-50 rounded-xl border border-dashed">
                             <p className="text-gray-500">{t.no_results}</p>
-                            <Link href="/products" className="text-blue-600 hover:underline mt-2 inline-block">
+                            <Link href="/products" className="text-gachar-blue hover:underline mt-2 inline-block">
                                 {t.clear_filters}
                             </Link>
                         </div>
@@ -86,7 +86,7 @@ export default function ProductList({ products, categories, categorySlug }: Prod
                                 <Link
                                     href={`/products/${product._id}`}
                                     key={product._id}
-                                    className="group block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border"
+                                    className="group block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-gray-100"
                                 >
                                     <div className="relative h-64 w-full bg-gray-100">
                                         {product.images?.[0] ? (
@@ -101,17 +101,17 @@ export default function ProductList({ products, categories, categorySlug }: Prod
                                         )}
                                     </div>
                                     <div className="p-4">
-                                        <p className="text-xs text-blue-600 font-medium mb-1 capitalize">
+                                        <p className="text-xs text-gachar-blue font-medium mb-1 capitalize">
                                             {getCategoryName(product.category?.slug) || t.uncategorized}
                                         </p>
-                                        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                                        <h3 className="font-semibold text-lg text-gray-900 group-hover:text-gachar-blue transition-colors line-clamp-1">
                                             {product.name}
                                         </h3>
                                         <p className="text-gray-500 text-sm mt-1 mb-3 line-clamp-2">
                                             {product.description}
                                         </p>
                                         <div className="flex items-center justify-between">
-                                            <span className="font-bold text-lg text-gray-900">฿{product.price.toLocaleString()}</span>
+                                            <span className="font-bold text-lg text-gachar-red">฿{product.price.toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </Link>

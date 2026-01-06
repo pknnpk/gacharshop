@@ -2,17 +2,14 @@
 import { notFound } from 'next/navigation';
 import connectToDatabase from '../../../lib/db';
 import Product from '../../../models/Product';
+import '../../../models/Category'; // Register Category model
 import ProductDetail from '../../../components/ProductDetail';
 
 async function getProduct(id: string) {
-    try {
-        await connectToDatabase();
-        const product = await Product.findById(id).populate('category').lean();
-        if (!product) return null;
-        return JSON.parse(JSON.stringify(product));
-    } catch (error) {
-        return null;
-    }
+    await connectToDatabase();
+    const product = await Product.findById(id).populate('category').lean();
+    if (!product) return null;
+    return JSON.parse(JSON.stringify(product));
 }
 
 export default async function ProductPage({

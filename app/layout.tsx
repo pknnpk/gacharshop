@@ -4,6 +4,7 @@ import { Inter, Outfit } from 'next/font/google';
 import { Providers } from './providers';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import BottomNav from '../components/BottomNav';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
@@ -21,13 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body className="font-sans antialiased bg-gray-50 flex flex-col min-h-screen" suppressHydrationWarning>
+      <body className="font-sans antialiased bg-gray-50 flex flex-col min-h-screen pb-16 md:pb-0" suppressHydrationWarning>
         <Providers>
           <Header />
           <main className="flex-1">
             {children}
           </main>
           <Footer />
+          <BottomNav />
         </Providers>
       </body>
     </html>
