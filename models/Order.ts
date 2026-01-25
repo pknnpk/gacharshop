@@ -35,6 +35,14 @@ const OrderSchema = new Schema(
             enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled'],
             default: 'pending',
         },
+        statusHistory: [
+            {
+                status: { type: String, required: true },
+                changedBy: { type: Schema.Types.ObjectId, ref: 'User' }, // User or null for system
+                reason: { type: String },
+                timestamp: { type: Date, default: Date.now }
+            }
+        ],
         paymentId: {
             type: String,
         },

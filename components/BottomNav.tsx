@@ -40,6 +40,11 @@ export default function BottomNav() {
         }
     ];
 
+    // Hide on profile sub-pages
+    if (pathname.startsWith('/profile') && pathname !== '/profile') {
+        return null; // Return null to render nothing
+    }
+
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe">
             <div className="flex justify-around items-center h-16">
@@ -52,8 +57,8 @@ export default function BottomNav() {
                             key={item.path}
                             href={item.path}
                             className={`flex flex-col items-center justify-center w-full h-full gap-1 transition-colors ${active
-                                    ? 'text-gachar-red'
-                                    : 'text-gray-400 hover:text-gachar-blue'
+                                ? 'text-gachar-red'
+                                : 'text-gray-400 hover:text-gachar-blue'
                                 }`}
                         >
                             <Icon

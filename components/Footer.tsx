@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { dictionary } from '../dictionaries';
@@ -10,6 +11,14 @@ const Footer = () => {
     const { language } = useLanguage();
     const t = dictionary[language].footer;
     const cat = dictionary[language].categories;
+
+    const pathname = usePathname();
+
+    // Hide footer on profile sub-pages (e.g. /profile/addresses, /profile/addresses/add)
+    // "remove footer from sub menu pages" - so keep it on main /profile
+    if (pathname?.startsWith('/profile/') && pathname !== '/profile') {
+        return null;
+    }
 
     return (
         <footer className="bg-gray-50 border-t">

@@ -3,16 +3,19 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { User, Package, Settings, LogOut, ChevronRight, Edit2, Globe } from 'lucide-react';
+import { User, Package, Settings, LogOut, ChevronRight, Edit2, Globe, CreditCard, Truck, Star, MapPin } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function ProfilePage() {
-    const { data: session, status } = useSession();
+    const { data: session, status, update } = useSession();
     const router = useRouter();
     const { language, toggleLanguage } = useLanguage();
 
     const [orders, setOrders] = useState<any[]>([]);
     const [showOrders, setShowOrders] = useState(false);
+    const [uploading, setUploading] = useState(false);
 
     // Redirect if not logged in
     useEffect(() => {
@@ -34,6 +37,50 @@ export default function ProfilePage() {
                 .catch(err => console.error('Error loading orders:', err));
         }
     }, [session]);
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) { // Increased limit to 5MB for GCS
+            toast.error(language === 'th' ? 'ขนาดไฟล์ต้องไม่เกิน 5MB' : 'File size must be less than 5MB');
+            return;
+        }
+
+        setUploading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const res = await fetch('/api/user/profile', {
+                method: 'PUT',
+                body: formData, // No Content-Type header needed, browser sets it
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to update image');
+            }
+
+            const updatedUser = await res.json();
+
+            toast.success(language === 'th' ? 'อัปเดตแกรูปโปรไฟล์เรียบร้อย' : 'Profile image updated');
+
+            // Update session with new image URL specifically if returned
+            if (updatedUser.image) {
+                await update({ image: updatedUser.image });
+            }
+
+            window.location.reload();
+        } catch (error: any) {
+            console.error("Upload Error Details:", error);
+            if (error.message) toast.error(`Upload Failed: ${error.message}`);
+            else toast.error('Failed to upload image');
+        } finally {
+            setUploading(false);
+        }
+    };
 
     if (status === 'loading') {
         return <div className="p-8 text-center bg-gray-50 min-h-screen pt-20">Loading...</div>;
@@ -58,10 +105,12 @@ export default function ProfilePage() {
                                 <User className="w-8 h-8" />
                             </div>
                         )}
-                        <button className="absolute bottom-0 right-0 bg-white text-gachar-blue p-1.5 rounded-full shadow-md hover:bg-gray-50 transition-colors">
+                        <label className={`absolute bottom-0 right-0 bg-white text-gachar-blue p-1.5 rounded-full shadow-md hover:bg-gray-50 transition-colors cursor-pointer ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
                             <Edit2 className="w-3 h-3" />
-                        </button>
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+                        </label>
                     </div>
+
                     <div>
                         <h1 className="text-xl font-bold">{session.user?.name || 'Guest User'}</h1>
                         <p className="text-blue-100 text-sm bg-black/10 px-2 py-0.5 rounded-full inline-block mt-1">{session.user?.email}</p>
@@ -90,7 +139,7 @@ export default function ProfilePage() {
                 {/* My Purchases */}
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                     <div
-                        className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
+                        className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-100"
                         onClick={() => setShowOrders(!showOrders)}
                     >
                         <h2 className="font-bold text-gray-800 flex items-center gap-3">
@@ -100,9 +149,37 @@ export default function ProfilePage() {
                             {language === 'th' ? 'การซื้อของฉัน' : 'My Purchases'}
                         </h2>
                         <button className="text-xs text-gray-400 flex items-center hover:text-gachar-blue transition-colors">
-                            {showOrders ? (language === 'th' ? 'ซ่อน' : 'Hide') : (language === 'th' ? 'ดูประวัติ' : 'View History')}
-                            <ChevronRight className={`w-4 h-4 transition-transform duration-200 ${showOrders ? 'rotate-90' : ''}`} />
+                            {language === 'th' ? 'ดูประวัติ' : 'View History'}
+                            <ChevronRight className="w-4 h-4 ml-1" />
                         </button>
+                    </div>
+
+                    {/* Order Status Icons Row (Shopee Style) */}
+                    <div className="flex flex-row justify-between items-start py-4 px-2">
+                        <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:scale-105 transition-transform">
+                            <div className="relative">
+                                <CreditCard className="w-7 h-7 text-gray-700 stroke-[1.5]" />
+                            </div>
+                            <span className="text-xs text-center text-gray-700 leading-tight">{language === 'th' ? 'ที่ต้องชำระ' : 'To Pay'}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:scale-105 transition-transform">
+                            <div className="relative">
+                                <Package className="w-7 h-7 text-gray-700 stroke-[1.5]" />
+                            </div>
+                            <span className="text-xs text-center text-gray-700 leading-tight">{language === 'th' ? 'ที่ต้องจัดส่ง' : 'To Ship'}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:scale-105 transition-transform">
+                            <div className="relative">
+                                <Truck className="w-7 h-7 text-gray-700 stroke-[1.5]" />
+                            </div>
+                            <span className="text-xs text-center text-gray-700 leading-tight">{language === 'th' ? 'ที่ต้องได้รับ' : 'To Receive'}</span>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center gap-2 cursor-pointer hover:scale-105 transition-transform">
+                            <div className="relative">
+                                <Star className="w-7 h-7 text-gray-700 stroke-[1.5]" />
+                            </div>
+                            <span className="text-xs text-center text-gray-700 leading-tight">{language === 'th' ? 'ให้คะแนน' : 'To Rate'}</span>
+                        </div>
                     </div>
 
                     {/* Collapsible Order List */}
@@ -163,15 +240,16 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    <div className="p-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => alert('Settings Feature Coming Soon!')}>
+                    {/* Address Book */}
+                    <Link href="/profile/addresses" className="p-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-gray-50 rounded-lg text-gray-500">
-                                <Settings className="w-5 h-5" />
+                            <div className="p-2 bg-orange-50 rounded-lg text-orange-500">
+                                <MapPin className="w-5 h-5" />
                             </div>
-                            <span className="text-sm font-medium text-gray-700">{language === 'th' ? 'ตั้งค่าบัญชี' : 'Account Settings'}</span>
+                            <span className="text-sm font-medium text-gray-700">{language === 'th' ? 'ที่อยู่ของฉัน' : 'My Addresses'}</span>
                         </div>
                         <ChevronRight className="w-4 h-4 text-gray-400" />
-                    </div>
+                    </Link>
 
                     <button
                         onClick={() => signOut({ callbackUrl: '/' })}

@@ -79,17 +79,25 @@ export const authOptions: NextAuthOptions = {
                 return false;
             }
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
+                token.picture = user.image;
             }
+
+            // Support client-side update() calls
+            if (trigger === 'update' && session?.image) {
+                token.picture = session.image;
+            }
+
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
+                session.user.image = token.picture as string | null | undefined;
             }
             return session;
         },
