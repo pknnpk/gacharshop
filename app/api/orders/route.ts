@@ -46,12 +46,13 @@ export async function POST(req: Request) {
         let totalAmount = 0;
         const orderItems = [];
 
+        // Pre-generate Order ID for logging linkage
+        const orderId = new mongoose.Types.ObjectId();
+
         for (const item of cart.items) {
             const product = item.product;
 
             // --- ATOMIC STOCK DEDUCTION (BR-01) ---
-            // Find product with enough stock AND decrease it in one go.
-            // If stock < quantity, this returns null.
             const updatedProduct = await Product.findOneAndUpdate(
                 { _id: product._id, stock: { $gte: item.quantity } },
                 { $inc: { stock: -item.quantity } },
@@ -59,7 +60,6 @@ export async function POST(req: Request) {
             );
 
             if (!updatedProduct) {
-                // Stock check failed
                 throw new Error(`Not enough stock for ${product.name}`);
             }
 
@@ -71,15 +71,7 @@ export async function POST(req: Request) {
                 afterBalance: updatedProduct.stock,
                 type: 'sale',
                 referenceType: 'Order',
-                // referenceId: Will be updated with Order ID later? 
-                // Actually we don't have order ID yet.
-                // We can set it after order creation if we want strict linking, 
-                // OR we generate a placeholder ID. 
-                // Let's generate a temporary ID or just use "Pending" and update it?
-                // Better: Order.create returns the ID. We can use it if we construct the object first?
-                // Mongoose create returns the doc.
-                // Let's rely on the order-creation step below. 
-                // We'll leave referenceId empty for a ms or use a placeholder string for now.
+                referenceId: orderId.toString(), // Link to the pre-generated Order ID
                 reason: 'Customer Checkout',
                 performedBy: user._id,
                 metadata: {
@@ -98,30 +90,22 @@ export async function POST(req: Request) {
         }
 
         // --- ORDER CREATION (BR-03) ---
+        // Use the pre-generated ID
         const [order] = await Order.create([{
+            _id: orderId,
             user: user._id,
             items: orderItems,
             totalAmount,
-            status: 'pending',
+            status: 'reserved', // RESERVED_PAYMENT
             statusHistory: [{
-                status: 'pending',
+                status: 'reserved',
                 reason: 'Order placed by customer',
                 timestamp: new Date(),
                 changedBy: user._id
             }],
             address,
-            paymentId: 'pending_' + Date.now()
+            paymentId: 'pending' // Placeholder, updated if needed
         }], { session: dbSession });
-
-        // Update logs with Order ID (Optional but cleaner for BR-02)
-        // We find the logs we just made? Or we could generate the ObjectId manually before creating.
-        // For simplicity, let's update them:
-        await InventoryLog.updateMany(
-            { reason: 'Customer Checkout', performedBy: user._id, createdAt: { $gt: new Date(Date.now() - 5000) }, referenceId: { $exists: false } },
-            { $set: { referenceId: order._id.toString() } },
-            { session: dbSession }
-        );
-
 
         // Clear Cart
         cart.items = [];
@@ -131,20 +115,40 @@ export async function POST(req: Request) {
         await dbSession.commitTransaction();
         dbSession.endSession();
 
+        // --- BEAM INTEGRATION ---
+        // Post-transaction: Generate Beam Session
+        // We do this AFTER commit to ensure we don't hold the DB lock while talking to external API.
+        // If Beam fails, the order remains PENDING_PAYMENT, which is fine.
+        // The user can retry payment or the order will expire.
+
+        // Import dynamically to avoid require cycles if any, or just standard import
+        const { createBeamCheckoutSession } = await import('@/lib/beam');
+
+        let paymentUrl = '';
+        try {
+            const beamSession = await createBeamCheckoutSession(order._id.toString(), totalAmount, user.email);
+            paymentUrl = beamSession.url;
+
+            // Optional: Update order with Beam metadata if needed (outside the main transaction)
+            // await Order.findByIdAndUpdate(order._id, { paymentId: beamSession.token });
+        } catch (beamError) {
+            console.error('Beam session creation failed:', beamError);
+            // We return the orderId but no URL, frontend should handle this (e.g. show retry button)
+        }
+
         return NextResponse.json({
             message: 'Order created successfully',
-            orderId: order._id
+            orderId: order._id,
+            paymentUrl: paymentUrl
         });
 
     } catch (error: any) {
-        // Rollback EVERYTHING on any error
         await dbSession.abortTransaction();
         dbSession.endSession();
 
         console.error('Order creation error:', error);
 
         const errorMessage = error.message || 'Internal Server Error';
-        // Return 400 for stock issues, 500 for others
         const status = errorMessage.includes('Not enough stock') ? 400 : 500;
 
         return NextResponse.json({ error: errorMessage }, { status });

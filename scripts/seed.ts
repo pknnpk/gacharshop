@@ -1,92 +1,103 @@
 
-import mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
-import path from 'path';
-import Category from '../models/Category';
-import Product from '../models/Product';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' }); // Load env vars
+// fallback to .env
+if (!process.env.MONGODB_URI) {
+    dotenv.config({ path: '.env' });
+}
 
-// Load environment variables from .env file
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+import mongoose from 'mongoose';
+import Product from '../models/Product';
+import Category from '../models/Category';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    console.error('Please define the MONGODB_URI environment variable inside .env');
+    console.error('Please define the MONGODB_URI environment variable');
     process.exit(1);
 }
 
-const categoriesData = [
+const mockProducts = [
     {
-        name: 'Electronics',
-        slug: 'electronics',
-        description: 'Gadgets, devices, and accessories.',
-        image: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-        name: 'Clothing',
-        slug: 'clothing',
-        description: 'Men and Women fashion.',
-        image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-        name: 'Home & Living',
-        slug: 'home-living',
-        description: 'Furniture, decor, and essentials.',
-        image: 'https://images.unsplash.com/photo-1513161455079-7dc1de15ef3e?auto=format&fit=crop&w=800&q=80',
-    },
-];
-
-const productsData = [
-    {
-        name: 'Wireless Headphones',
-        slug: 'wireless-headphones',
-        description: 'High-quality noise-canceling wireless headphones.',
-        price: 3490,
-        images: ['https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80'],
-        categorySlug: 'electronics',
+        name: "Vintage Gacha Pod",
+        description: "A rare authentic vintage gacha pod from 1990s.",
+        price: 150,
         stock: 50,
-        status: 'active',
+        reservationDuration: 60,
+        images: ["https://placehold.co/400"]
     },
     {
-        name: 'Smart Watch',
-        slug: 'smart-watch',
-        description: 'Fitness tracker and smart notifications.',
-        price: 5290,
-        images: ['https://images.unsplash.com/photo-1544117519-31a4b719223d?auto=format&fit=crop&w=800&q=80'],
-        categorySlug: 'electronics',
-        stock: 30,
-        status: 'active',
+        name: "Neon Anime Figure",
+        description: "Limited edition neon colored figure.",
+        price: 850,
+        stock: 5,
+        reservationDuration: 15, // Hot item
+        images: ["https://placehold.co/400"]
     },
     {
-        name: 'Cotton T-Shirt',
-        slug: 'cotton-t-shirt',
-        description: '100% organic cotton basic tee.',
-        price: 699,
-        images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80'],
-        categorySlug: 'clothing',
+        name: "Mystery Box - Gold",
+        description: "Contains 5 random premium items.",
+        price: 1200,
+        stock: 20,
+        reservationDuration: 30,
+        images: ["https://placehold.co/400"]
+    },
+    {
+        name: "Miniature Arcade Machine",
+        description: "Fully functional 1/12 scale arcade.",
+        price: 2500,
+        stock: 3,
+        reservationDuration: 15,
+        images: ["https://placehold.co/400"]
+    },
+    {
+        name: "Capsule Toy Set A",
+        description: "Set of 10 standard capsules.",
+        price: 300,
         stock: 100,
-        status: 'active',
+        reservationDuration: 60,
+        images: ["https://placehold.co/400"]
     },
     {
-        name: 'Denim Jacket',
-        slug: 'denim-jacket',
-        description: 'Classic vintage style denim jacket.',
-        price: 2490,
-        images: ['https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=800&q=80'],
-        categorySlug: 'clothing',
-        stock: 25,
-        status: 'active',
+        name: "Retro Keychain",
+        description: "Pixel art style keychain.",
+        price: 80,
+        stock: 200,
+        reservationDuration: 60,
+        images: ["https://placehold.co/400"]
     },
     {
-        name: 'Modern Lamp',
-        slug: 'modern-lamp',
-        description: 'Minimalist desk lamp for your workspace.',
-        price: 1290,
-        images: ['https://images.unsplash.com/photo-1565814329452-e1efa11c5b89?auto=format&fit=crop&w=800&q=80'],
-        categorySlug: 'home-living',
-        stock: 40,
-        status: 'active',
+        name: "Collector's Coin",
+        description: "Commemorative coin 2025.",
+        price: 500,
+        stock: 10,
+        reservationDuration: 45,
+        images: ["https://placehold.co/400"]
     },
+    {
+        name: "Plushie Mascot",
+        description: "Soft and cuddly mascot character.",
+        price: 450,
+        stock: 30,
+        reservationDuration: 60,
+        images: ["https://placehold.co/400"]
+    },
+    {
+        name: "Sticker Pack",
+        description: "Holographic stickers.",
+        price: 50,
+        stock: 500,
+        reservationDuration: 60,
+        images: ["https://placehold.co/400"]
+    },
+    {
+        name: "Display Case",
+        description: "Acrylic case for your collection.",
+        price: 900,
+        stock: 15,
+        reservationDuration: 60,
+        images: ["https://placehold.co/400"]
+    }
 ];
 
 async function seed() {
@@ -94,43 +105,46 @@ async function seed() {
         await mongoose.connect(MONGODB_URI!);
         console.log('Connected to MongoDB');
 
-        // Clear existing data
-        await Category.deleteMany({});
-        await Product.deleteMany({});
-        console.log('Cleared existing Categories and Products');
+        // 1. Ensure Category
+        let category = await Category.findOne({ name: 'General' });
+        if (!category) {
+            category = await Category.create({
+                name: 'General',
+                slug: 'general',
+                description: 'General Items'
+            });
+            console.log('Created Category: General');
+        }
 
-        // Insert Categories
-        const createdCategories = await Category.insertMany(categoriesData);
-        console.log(`Seeded ${createdCategories.length} Categories`);
-
-        // Map category slugs to IDs
-        const categoryMap = new Map();
-        createdCategories.forEach((cat) => {
-            categoryMap.set(cat.slug, cat._id);
-        });
-
-        // Prepare Products with Category IDs
-        const productsWithCategoryIds = productsData.map((prod) => {
-            const { categorySlug, ...rest } = prod;
-            const categoryId = categoryMap.get(categorySlug);
-            if (!categoryId) {
-                throw new Error(`Category not found for slug: ${categorySlug}`);
+        // 2. Insert Products
+        const operations = mockProducts.map((p, index) => ({
+            updateOne: {
+                filter: { slug: `mock-product-${index}` }, // Use robust slug
+                update: {
+                    $set: {
+                        name: p.name,
+                        slug: `mock-product-${index}`,
+                        description: p.description,
+                        price: p.price,
+                        category: category!._id,
+                        stock: p.stock,
+                        reservationDuration: p.reservationDuration,
+                        images: p.images,
+                        status: 'active'
+                    }
+                },
+                upsert: true
             }
-            return {
-                ...rest,
-                category: categoryId,
-            };
-        });
+        }));
 
-        // Insert Products
-        const createdProducts = await Product.insertMany(productsWithCategoryIds);
-        console.log(`Seeded ${createdProducts.length} Products`);
+        await Product.bulkWrite(operations);
+        console.log(`Seeded ${mockProducts.length} products.`);
 
-        console.log('Seeding completed successfully');
-        process.exit(0);
     } catch (error) {
-        console.error('Error seeding database:', error);
-        process.exit(1);
+        console.error('Seed Error:', error);
+    } finally {
+        await mongoose.disconnect();
+        console.log('Disconnected');
     }
 }
 

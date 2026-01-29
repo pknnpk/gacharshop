@@ -32,8 +32,8 @@ const OrderSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ['pending', 'paid', 'shipped', 'completed', 'cancelled'],
-            default: 'pending',
+            enum: ['reserved', 'paid', 'shipped', 'completed', 'cancelled'],
+            default: 'reserved',
         },
         statusHistory: [
             {
@@ -48,6 +48,11 @@ const OrderSchema = new Schema(
         },
         address: {
             type: String,
+        },
+        trackingInfo: {
+            courier: String,
+            trackingNumber: String,
+            shippedAt: Date,
         },
     },
     {

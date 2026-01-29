@@ -34,9 +34,9 @@ const ProductSchema = new Schema(
             required: true,
             default: 0,
         },
-        reservationTimeout: {
+        reservationDuration: {
             type: Number,
-            default: 15, // Minutes
+            default: 60, // Minutes
         },
         quotaLimit: {
             type: Number,

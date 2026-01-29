@@ -3,10 +3,11 @@ import { getFileStream } from '@/lib/storage';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { path: string[] } }
+    { params }: { params: Promise<{ path: string[] }> }
 ) {
     try {
-        const path = params.path.join('/');
+        const { path: pathArray } = await params;
+        const path = pathArray.join('/');
 
         // Security check: unexpected path traversal or invalid paths
         // decoded path should not contain '..'
@@ -30,7 +31,9 @@ export async function GET(
         // Actually, the filename changes with timestamp, so we can aggressively cache immutable content.
         const headers = new Headers();
         headers.set('Content-Type', contentType);
-        headers.set('Content-Length', contentLength.toString());
+        if (contentLength) {
+            headers.set('Content-Length', contentLength.toString());
+        }
         headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 
         return new NextResponse(webStream, {
