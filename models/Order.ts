@@ -32,7 +32,7 @@ const OrderSchema = new Schema(
         },
         status: {
             type: String,
-            enum: ['reserved', 'paid', 'shipped', 'completed', 'cancelled'],
+            enum: ['reserved', 'paid', 'shipped', 'completed', 'cancelled', 'refunded'],
             default: 'reserved',
         },
         statusHistory: [
@@ -43,7 +43,37 @@ const OrderSchema = new Schema(
                 timestamp: { type: Date, default: Date.now }
             }
         ],
+        // BeamCheckout Integration
         paymentId: {
+            type: String,
+        },
+        beamTransactionId: {
+            type: String,
+        },
+        refundInfo: {
+            refundId: String,
+            refundedAt: Date,
+            refundAmount: Number,
+            refundReason: String,
+        },
+        // Line OA Integration
+        lineUserId: {
+            type: String,
+        },
+        lineNotificationSent: {
+            type: Boolean,
+            default: false,
+        },
+        // POSPOS Sync
+        posposSyncStatus: {
+            type: String,
+            enum: ['pending', 'synced', 'failed'],
+            default: 'pending',
+        },
+        posposSyncAt: {
+            type: Date,
+        },
+        posposSyncError: {
             type: String,
         },
         address: {

@@ -7,8 +7,9 @@ import Order from '@/models/Order';
 import Cart from '@/models/Cart';
 import Product from '@/models/Product';
 import User from '@/models/User';
-import InventoryLog from '@/models/InventoryLog'; // Import InventoryLog
-import mongoose from 'mongoose'; // Import mongoose
+import InventoryLog from '@/models/InventoryLog';
+import mongoose from 'mongoose';
+import { createBeamRefund } from '@/lib/beam';
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -179,5 +180,138 @@ export async function GET(req: Request) {
     } catch (error) {
         console.error('Fetch orders error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+/**
+ * Cancel an order and trigger refund if payment was made
+ */
+export async function DELETE(req: Request) {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        await dbConnect();
+        const { searchParams } = new URL(req.url);
+        const orderId = searchParams.get('orderId');
+        const reason = searchParams.get('reason') || 'Customer requested cancellation';
+
+        if (!orderId) {
+            return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+        }
+
+        const user = await User.findOne({ email: session.user.email });
+        if (!user) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const order = await Order.findOne({ _id: orderId, user: user._id });
+        if (!order) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+
+        // Check if order can be cancelled
+        const cancellableStatuses = ['reserved', 'paid'];
+        if (!cancellableStatuses.includes(order.status)) {
+            return NextResponse.json({
+                error: `Cannot cancel order in ${order.status} status`
+            }, { status: 400 });
+        }
+
+        const dbSession = await mongoose.startSession();
+        dbSession.startTransaction();
+
+        try {
+            // Handle refund if order was paid
+            if (order.status === 'paid' && order.beamTransactionId) {
+                console.log(`[Order Cancel] Triggering refund for order ${orderId}`);
+
+                // Call Beam refund API
+                const refundResult = await createBeamRefund(
+                    order.beamTransactionId,
+                    order.totalAmount,
+                    reason
+                );
+
+                if (refundResult.success) {
+                    order.status = 'refunded';
+                    order.refundInfo = {
+                        refundId: refundResult.refundId,
+                        refundedAt: new Date(),
+                        refundAmount: order.totalAmount,
+                        refundReason: reason
+                    };
+                } else {
+                    // Refund failed, still cancel but mark as needing manual review
+                    console.error(`[Order Cancel] Refund failed for order ${orderId}:`, refundResult.error);
+                    order.status = 'cancelled';
+                    order.refundInfo = {
+                        refundId: undefined,
+                        refundedAt: undefined,
+                        refundAmount: 0,
+                        refundReason: `Refund failed: ${refundResult.error}. Manual review required.`
+                    };
+                }
+            } else {
+                order.status = 'cancelled';
+            }
+
+            // Add to status history
+            order.statusHistory.push({
+                status: order.status,
+                reason: reason,
+                timestamp: new Date(),
+                changedBy: user._id
+            });
+
+            await order.save({ session: dbSession });
+
+            // Restore stock
+            for (const item of order.items) {
+                const product = await Product.findById(item.product).session(dbSession);
+                if (product) {
+                    product.stock += item.quantity;
+                    await product.save({ session: dbSession });
+
+                    // Log inventory change
+                    await InventoryLog.create([{
+                        product: product._id,
+                        change: item.quantity,
+                        beforeBalance: product.stock - item.quantity,
+                        afterBalance: product.stock,
+                        type: 'cancel',
+                        referenceType: 'Order',
+                        referenceId: order._id.toString(),
+                        reason: 'Order cancelled - stock restored',
+                        performedBy: user._id
+                    }], { session: dbSession });
+                }
+            }
+
+            await dbSession.commitTransaction();
+            dbSession.endSession();
+
+            console.log(`[Order Cancel] Order ${orderId} cancelled successfully`);
+            return NextResponse.json({
+                message: 'Order cancelled successfully',
+                order: {
+                    id: order._id,
+                    status: order.status,
+                    refundId: order.refundInfo?.refundId
+                }
+            });
+
+        } catch (err) {
+            await dbSession.abortTransaction();
+            dbSession.endSession();
+            throw err;
+        }
+
+    } catch (error: any) {
+        console.error('Cancel order error:', error);
+        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

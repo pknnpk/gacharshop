@@ -12,6 +12,11 @@ const ProductSchema = new Schema(
             required: true,
             unique: true,
         },
+        sku: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
         description: {
             type: String,
             required: true,
@@ -33,6 +38,14 @@ const ProductSchema = new Schema(
             type: Number,
             required: true,
             default: 0,
+        },
+        // POSPOS Integration
+        posposStock: {
+            type: Number,
+            default: 0,
+        },
+        posposLastSyncAt: {
+            type: Date,
         },
         reservationDuration: {
             type: Number,

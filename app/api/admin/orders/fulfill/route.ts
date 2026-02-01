@@ -4,6 +4,7 @@ import { authOptions } from '../../../auth/[...nextauth]/route';
 import dbConnect from '@/lib/db';
 import Order from '@/models/Order';
 import User from '@/models/User';
+import { sendTrackingNotification } from '@/lib/line';
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { orderId, trackingNumber, courier } = body;
+        const { orderId, trackingNumber, courier, sendNotification = true } = body;
 
         if (!orderId || !trackingNumber) {
             return NextResponse.json({ error: 'Order ID and Tracking Number are required' }, { status: 400 });
@@ -53,9 +54,38 @@ export async function POST(req: Request) {
 
         await order.save();
 
-        return NextResponse.json({ success: true });
+        // Send Line notification if user has lineUserId
+        if (sendNotification && order.lineUserId) {
+            const orderInfo = {
+                orderId: order._id.toString(),
+                orderNumber: order._id.toString().slice(-6).toUpperCase(),
+                status: order.status,
+                totalAmount: order.totalAmount,
+                items: order.items.map((item: any) => ({
+                    name: 'Product',
+                    quantity: item.quantity,
+                    price: item.price
+                })),
+                trackingInfo: {
+                    courier: order.trackingInfo.courier,
+                    trackingNumber: order.trackingInfo.trackingNumber
+                },
+                createdAt: order.createdAt
+            };
+
+            // Send notification (non-blocking)
+            sendTrackingNotification(order.lineUserId, orderInfo).catch(err => {
+                console.error('Failed to send Line notification:', err);
+            });
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: 'Order fulfilled and notification sent if applicable'
+        });
 
     } catch (error: any) {
+        console.error('Fulfill order error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
