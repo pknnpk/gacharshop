@@ -106,7 +106,7 @@ async function checkForDuplicates(slipData: BankSlipData): Promise<DuplicateChec
  * Verify a bank payment slip
  */
 export async function verifyBankSlip(slipData: BankSlipData): Promise<SlipVerificationResult> {
-    debug('Verifying bank slip', { orderId: slipData.orderId, amount: slipData.transferAmount });
+    debug('Verifying bank slip', { orderId: slipData.orderId, metadata: { amount: slipData.transferAmount } });
 
     try {
         await dbConnect();
@@ -244,7 +244,7 @@ export async function rejectBankSlip(
 
         await order.save();
 
-        info('Bank slip rejected', { orderId, reason });
+        info('Bank slip rejected', { orderId, metadata: { reason } });
         return { success: true, message: 'Slip rejected' };
 
     } catch (error: any) {
@@ -275,7 +275,7 @@ export async function getPendingSlipVerifications(): Promise<any[]> {
  * Mock slip verification for development
  */
 export async function mockVerifyBankSlip(slipData: BankSlipData): Promise<SlipVerificationResult> {
-    debug('[MOCK] Verifying bank slip', slipData);
+    debug('[MOCK] Verifying bank slip', { metadata: slipData as any });
 
     await new Promise(resolve => setTimeout(resolve, 500));
 

@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../../../auth/[...nextauth]/route';
 import { verifyBankSlip, rejectBankSlip, getPendingSlipVerifications, BankSlipData } from '@/lib/slipVerification';
-import { rateLimit } from '@/lib/middleware/rateLimit';
+import { createRateLimiter } from '@/lib/middleware/rateLimit';
 import { debug, info, warn, errorLog } from '@/lib/middleware/logger';
 
-const rateLimitHandler = rateLimit({
-    interval: 60 * 1000,
-    uniqueTokenPerInterval: 500
-});
+const rateLimitHandler = createRateLimiter(100, 60 * 1000); // 100 requests per minute
 
 export async function GET() {
     try {

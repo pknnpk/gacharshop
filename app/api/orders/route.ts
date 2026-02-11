@@ -270,7 +270,7 @@ export async function DELETE(req: Request) {
             await order.save({ session: dbSession });
 
             // Restore stock - use bulk operations to avoid N+1 queries
-            const productRestores = order.items.map(item => ({
+            const productRestores = order.items.map((item: any) => ({
                 updateOne: {
                     filter: { _id: item.product },
                     update: { $inc: { stock: item.quantity } }
@@ -282,7 +282,7 @@ export async function DELETE(req: Request) {
             }
 
             // Get updated products for audit log
-            const updatedProducts = await Product.find({ _id: { $in: order.items.map(i => i.product) } }).session(dbSession);
+            const updatedProducts = await Product.find({ _id: { $in: order.items.map((i: any) => i.product) } }).session(dbSession);
             const productMap = new Map(updatedProducts.map(p => [p._id.toString(), p]));
 
             // Log inventory changes

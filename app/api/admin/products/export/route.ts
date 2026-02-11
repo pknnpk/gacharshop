@@ -62,7 +62,7 @@ export async function GET(req: Request) {
 
             const filename = `products_export_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-            return new NextResponse(result.buffer, {
+            return new NextResponse(result.buffer as any, {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

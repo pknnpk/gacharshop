@@ -262,7 +262,7 @@ export async function importProductsFromCSV(buffer: Buffer): Promise<ImportResul
 
                         info('CSV import completed', {
                             imported: productsToInsert.length,
-                            errors: errors.length
+                            metadata: { errorCount: errors.length }
                         });
 
                         resolve({
@@ -305,7 +305,7 @@ export async function importProductsFromExcel(buffer: Buffer): Promise<ImportRes
         await dbConnect();
 
         const workbook = new ExcelJS.Workbook();
-        await workbook.xlsx.load(buffer);
+        await workbook.xlsx.load(buffer as any);
 
         const worksheet = workbook.worksheets[0];
         if (!worksheet) {
@@ -510,7 +510,7 @@ export async function importProductsFromExcel(buffer: Buffer): Promise<ImportRes
 
             info('Excel import completed', {
                 imported: productsToInsert.length,
-                errors: errors.length
+                metadata: { errorCount: errors.length }
             });
 
             return {
@@ -611,7 +611,7 @@ export async function exportProductsToExcel(
             column.width = Math.max(column.width || 10, 15);
         });
 
-        const buffer = await workbook.xlsx.writeBuffer() as Buffer;
+        const buffer = await workbook.xlsx.writeBuffer() as any;
 
         info('Excel export completed', { count: products.length });
 

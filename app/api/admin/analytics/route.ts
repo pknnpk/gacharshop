@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
                 startDate = new Date(0); // All time
         }
 
-        debug('Fetching analytics', { period, startDate });
+        debug('Fetching analytics', { metadata: { period, startDate } });
 
         // Run all queries in parallel
         const [
@@ -150,7 +150,7 @@ export async function GET(req: NextRequest) {
             inventorySummary: inventorySummary[0] || { totalProducts: 0, totalStock: 0, avgPrice: 0, lowStockProducts: 0 }
         };
 
-        info('Analytics retrieved', { period, adminId: session.user.id });
+        info('Analytics retrieved', { metadata: { period, adminId: session.user.id } });
 
         return NextResponse.json({
             success: true,
