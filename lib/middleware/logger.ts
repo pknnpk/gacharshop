@@ -46,6 +46,8 @@ export interface LogEntry {
     collection?: string;
     operation?: string;
     to?: string;
+    imported?: number;
+    count?: number;
 }
 
 /**

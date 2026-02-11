@@ -64,29 +64,40 @@ export async function GET(req: Request) {
                     });
                     await order.save({ session: dbSession });
 
-                    // Restore Stock
+                    // Restore Stock - use bulk operations to avoid N+1 queries
+                    const productRestores = order.items.map(item => ({
+                        updateOne: {
+                            filter: { _id: item.product._id },
+                            update: { $inc: { stock: item.quantity } }
+                        }
+                    }));
+
+                    if (productRestores.length > 0) {
+                        await Product.bulkWrite(productRestores, { session: dbSession });
+                    }
+
+                    // Get updated products for audit log
+                    const updatedProducts = await Product.find({
+                        _id: { $in: order.items.map(i => i.product._id) }
+                    }).session(dbSession);
+                    const productMap = new Map(updatedProducts.map(p => [p._id.toString(), p]));
+
+                    // Audit Log
                     for (const item of order.items) {
-                        const product = item.product;
-
-                        // Use findOneAndUpdate to ensure we get the NEW balance for the log
-                        const updatedProduct = await Product.findOneAndUpdate(
-                            { _id: product._id },
-                            { $inc: { stock: item.quantity } },
-                            { session: dbSession, new: true }
-                        );
-
-                        // Audit Log
-                        await InventoryLog.create([{
-                            product: product._id,
-                            change: item.quantity,
-                            beforeBalance: updatedProduct.stock - item.quantity,
-                            afterBalance: updatedProduct.stock,
-                            type: 'cancel',
-                            referenceType: 'Order',
-                            referenceId: order._id.toString(),
-                            reason: 'Payment Timeout',
-                            performedBy: null // System
-                        }], { session: dbSession });
+                        const product = productMap.get(item.product._id.toString());
+                        if (product) {
+                            await InventoryLog.create([{
+                                product: product._id,
+                                change: item.quantity,
+                                beforeBalance: product.stock - item.quantity,
+                                afterBalance: product.stock,
+                                type: 'cancel',
+                                referenceType: 'Order',
+                                referenceId: order._id.toString(),
+                                reason: 'Payment Timeout',
+                                performedBy: null // System
+                            }], { session: dbSession });
+                        }
                     }
 
                     results.expired++;

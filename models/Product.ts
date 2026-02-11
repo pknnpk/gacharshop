@@ -39,6 +39,20 @@ const ProductSchema = new Schema(
             required: true,
             default: 0,
         },
+        inventory: [
+            {
+                location: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Location',
+                    required: true,
+                },
+                quantity: {
+                    type: Number,
+                    required: true,
+                    default: 0,
+                },
+            }
+        ],
         // POSPOS Integration
         posposStock: {
             type: Number,

@@ -269,14 +269,26 @@ export async function DELETE(req: Request) {
 
             await order.save({ session: dbSession });
 
-            // Restore stock
-            for (const item of order.items) {
-                const product = await Product.findById(item.product).session(dbSession);
-                if (product) {
-                    product.stock += item.quantity;
-                    await product.save({ session: dbSession });
+            // Restore stock - use bulk operations to avoid N+1 queries
+            const productRestores = order.items.map(item => ({
+                updateOne: {
+                    filter: { _id: item.product },
+                    update: { $inc: { stock: item.quantity } }
+                }
+            }));
 
-                    // Log inventory change
+            if (productRestores.length > 0) {
+                await Product.bulkWrite(productRestores, { session: dbSession });
+            }
+
+            // Get updated products for audit log
+            const updatedProducts = await Product.find({ _id: { $in: order.items.map(i => i.product) } }).session(dbSession);
+            const productMap = new Map(updatedProducts.map(p => [p._id.toString(), p]));
+
+            // Log inventory changes
+            for (const item of order.items) {
+                const product = productMap.get(item.product.toString());
+                if (product) {
                     await InventoryLog.create([{
                         product: product._id,
                         change: item.quantity,
