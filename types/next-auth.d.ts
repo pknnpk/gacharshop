@@ -10,10 +10,20 @@ declare module "next-auth" {
             /** The user's postal address. */
             id: string
             role: string
+            provider?: string
         } & DefaultSession["user"]
     }
 
     interface User {
         role: string
+        provider?: string
+    }
+}
+
+declare module "next-auth/jwt" {
+    interface JWT {
+        role?: string
+        provider?: string
+        id?: string
     }
 }

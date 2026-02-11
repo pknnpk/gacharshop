@@ -14,6 +14,7 @@ export const authOptions: NextAuthOptions = {
         LineProvider({
             clientId: process.env.LINE_CHANNEL_ID!,
             clientSecret: process.env.LINE_CHANNEL_SECRET!,
+            authorization: { params: { scope: 'profile openid email' } },
         }),
     ],
     session: {
@@ -103,11 +104,14 @@ export const authOptions: NextAuthOptions = {
                 return false;
             }
         },
-        async jwt({ token, user, trigger, session }) {
+        async jwt({ token, user, account, trigger, session }) {
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
                 token.picture = user.image;
+                if (account?.provider) {
+                    token.provider = account.provider;
+                }
             }
 
             // Support client-side update() calls
@@ -122,6 +126,7 @@ export const authOptions: NextAuthOptions = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as string;
                 session.user.image = token.picture as string | null | undefined;
+                session.user.provider = token.provider as string | undefined;
             }
             return session;
         },

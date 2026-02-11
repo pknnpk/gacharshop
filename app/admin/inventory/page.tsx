@@ -23,7 +23,7 @@ export default function InventoryDashboard() {
             const data = await res.json();
             setProducts(data);
         } catch (error) {
-            toast.error('Could not load inventory');
+            toast.error('ไม่สามารถโหลดข้อมูลได้');
         } finally {
             setLoading(false);
         }
@@ -60,7 +60,7 @@ export default function InventoryDashboard() {
 
             if (!res.ok) throw new Error(data.error || 'Failed');
 
-            toast.success('Stock updated!');
+            toast.success('อัปเดตสต็อกเรียบร้อย!');
             setSelectedProduct(null);
             fetchInventory(); // Refresh
 
@@ -69,16 +69,16 @@ export default function InventoryDashboard() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading Inventory...</div>;
+    if (loading) return <div className="p-8 text-center">กำลังโหลดข้อมูล...</div>;
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
-                    <Package /> Inventory Management
+                    <Package /> จัดการคลังสินค้า
                 </h1>
                 <button onClick={fetchInventory} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">
-                    <RefreshCw className="w-4 h-4" /> Refresh
+                    <RefreshCw className="w-4 h-4" /> รีเฟรช
                 </button>
             </div>
 
@@ -86,12 +86,12 @@ export default function InventoryDashboard() {
                 <table className="w-full text-left">
                     <thead className="bg-gray-50 border-b">
                         <tr>
-                            <th className="p-4 font-medium text-gray-500">Product</th>
-                            <th className="p-4 font-medium text-gray-500">SKU</th>
-                            <th className="p-4 font-medium text-gray-500 text-center">Total</th>
-                            <th className="p-4 font-medium text-gray-500 text-center">Reserved</th>
-                            <th className="p-4 font-medium text-gray-500 text-center">Available</th>
-                            <th className="p-4 font-medium text-gray-500 text-right">Actions</th>
+                            <th className="p-4 font-medium text-gray-500">สินค้า</th>
+                            <th className="p-4 font-medium text-gray-500">รหัสสินค้า (SKU)</th>
+                            <th className="p-4 font-medium text-gray-500 text-center">ยอดรวม</th>
+                            <th className="p-4 font-medium text-gray-500 text-center">จองแล้ว</th>
+                            <th className="p-4 font-medium text-gray-500 text-center">พร้อมขาย</th>
+                            <th className="p-4 font-medium text-gray-500 text-right">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -113,12 +113,12 @@ export default function InventoryDashboard() {
                                     <button
                                         onClick={() => handleOpenAdjust(p, 'add')}
                                         className="inline-flex items-center px-2 py-1 text-sm bg-blue-50 text-blue-700 rounded hover:bg-blue-100">
-                                        <Plus className="w-3 h-3 mr-1" /> Add
+                                        <Plus className="w-3 h-3 mr-1" /> เพิ่ม
                                     </button>
                                     <button
                                         onClick={() => handleOpenAdjust(p, 'remove')}
                                         className="inline-flex items-center px-2 py-1 text-sm bg-red-50 text-red-700 rounded hover:bg-red-100">
-                                        <Minus className="w-3 h-3 mr-1" /> Remove
+                                        <Minus className="w-3 h-3 mr-1" /> ลด
                                     </button>
                                 </td>
                             </tr>
@@ -132,12 +132,12 @@ export default function InventoryDashboard() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
                         <h3 className="text-lg font-bold mb-4">
-                            {adjustmentType === 'add' ? 'Add Stock' : 'Remove Stock'}: {selectedProduct.name}
+                            {adjustmentType === 'add' ? 'เพิ่มสต็อก' : 'ลดสต็อก'}: {selectedProduct.name}
                         </h3>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm mb-1">Quantity</label>
+                                <label className="block text-sm mb-1">จำนวน</label>
                                 <input
                                     type="number"
                                     min="1"
@@ -147,12 +147,12 @@ export default function InventoryDashboard() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm mb-1">Reason / Note</label>
+                                <label className="block text-sm mb-1">เหตุผล / หมายเหตุ</label>
                                 <textarea
                                     value={adjustmentReason}
                                     onChange={e => setAdjustmentReason(e.target.value)}
                                     className="w-full border p-2 rounded"
-                                    placeholder="e.g. New Shipment"
+                                    placeholder={adjustmentType === 'add' ? 'เช่น เติมสินค้า' : 'เช่น ตัดของเสีย'}
                                 />
                             </div>
 
@@ -160,13 +160,13 @@ export default function InventoryDashboard() {
                                 <button
                                     onClick={() => setSelectedProduct(null)}
                                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">
-                                    Cancel
+                                    ยกเลิก
                                 </button>
                                 <button
                                     onClick={submitAdjustment}
                                     className={`px-4 py-2 text-white rounded ${adjustmentType === 'add' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-600 hover:bg-red-700'
                                         }`}>
-                                    Confirm
+                                    ยืนยัน
                                 </button>
                             </div>
                         </div>

@@ -3,7 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { User, Package, Settings, LogOut, ChevronRight, Edit2, Globe, CreditCard, Truck, Star, MapPin } from 'lucide-react';
+import { User, Package, Settings, LogOut, ChevronRight, Edit2, Globe, CreditCard, Truck, Star, MapPin, ShieldAlert } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
@@ -112,8 +112,30 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                        <h1 className="text-xl font-bold">{session.user?.name || 'Guest User'}</h1>
-                        <p className="text-blue-100 text-sm bg-black/10 px-2 py-0.5 rounded-full inline-block mt-1">{session.user?.email}</p>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold">{session.user?.name || 'Guest User'}</h1>
+                            {session.user?.role === 'admin' && (
+                                <span className="bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
+                                    <ShieldAlert className="w-3 h-3" />
+                                    ADMIN
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-col gap-1 mt-1">
+                            <p className="text-blue-100 text-sm bg-black/10 px-2 py-0.5 rounded-full inline-block">
+                                {session.user?.email || (language === 'th' ? 'ไม่มีอีเมล' : 'No Email')}
+                            </p>
+                            {session.user?.provider && (
+                                <p className="text-blue-100 text-xs flex items-center gap-1 bg-black/10 px-2 py-0.5 rounded-full inline-block w-fit">
+                                    <span className="opacity-75">{language === 'th' ? 'เข้าสู่ระบบโดย' : 'Logged in with'}</span>
+                                    <span className="font-semibold capitalize">
+                                        {session.user.provider === 'google' ? 'Google' :
+                                            session.user.provider === 'line' ? 'LINE' :
+                                                session.user.provider}
+                                    </span>
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -221,6 +243,22 @@ export default function ProfilePage() {
 
                 {/* Account Settings */}
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
+                    {/* Admin Dashboard Link */}
+                    {session.user?.role === 'admin' && (
+                        <Link href="/admin" className="p-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer group">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-slate-800 rounded-lg text-yellow-400 group-hover:bg-slate-700 transition-colors">
+                                    <ShieldAlert className="w-5 h-5" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-gray-700">{language === 'th' ? 'แดชบอร์ดผู้ดูแล' : 'Admin Dashboard'}</span>
+                                    <span className="text-[10px] text-gray-400">Manage products, inventory & orders</span>
+                                </div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-gray-400" />
+                        </Link>
+                    )}
+
                     {/* Language Toggle */}
                     <div
                         className="p-4 border-b border-gray-100 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"

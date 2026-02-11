@@ -26,12 +26,37 @@ export async function GET(req: NextRequest) {
 
     try {
         // Fetch all products with inventory populated
+        // Fetch all products with inventory populated
         const products = await Product.find({})
             .populate('inventory.location')
             .sort({ updatedAt: -1 })
             .lean();
 
-        return NextResponse.json(products);
+        // Calculate reserved stock from active orders (reserved or paid but not yet shipped/completed)
+        const activeOrders = await Order.find({
+            status: { $in: ['reserved', 'paid'] }
+        }).select('items');
+
+        const reservedCounts: Record<string, number> = {};
+        activeOrders.forEach(order => {
+            order.items.forEach((item: any) => {
+                const pid = item.product.toString();
+                reservedCounts[pid] = (reservedCounts[pid] || 0) + item.quantity;
+            });
+        });
+
+        const productsWithStock = products.map((p: any) => {
+            const reserved = reservedCounts[p._id.toString()] || 0;
+            const totalStock = p.stock || 0;
+            return {
+                ...p,
+                totalStock,
+                reserved,
+                available: totalStock - reserved
+            };
+        });
+
+        return NextResponse.json(productsWithStock);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
