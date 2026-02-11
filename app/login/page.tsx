@@ -20,7 +20,7 @@ function LoginContent() {
             <div className="space-y-4">
                 <button
                     onClick={() => handleLogin('google')}
-                    className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-xl transition-all shadow-sm"
+                    className="cursor-pointer w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-xl transition-all shadow-sm"
                 >
                     {/* Google Icon SVG */}
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -46,7 +46,7 @@ function LoginContent() {
 
                 <button
                     onClick={() => handleLogin('line')}
-                    className="w-full flex items-center justify-center gap-3 bg-[#00B900] text-white hover:bg-[#009900] font-semibold py-3 px-4 rounded-xl transition-all shadow-sm"
+                    className="cursor-pointer w-full flex items-center justify-center gap-3 bg-[#00B900] text-white hover:bg-[#009900] font-semibold py-3 px-4 rounded-xl transition-all shadow-sm"
                 >
                     {/* Line Icon SVG (Simplified) */}
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

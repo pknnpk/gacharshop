@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
   // Experimental optimizations
   experimental: {
     // Optimize package imports for smaller bundles
-    optimizePackageImports: ['lucide-react', 'zod', 'mongoose'],
+    optimizePackageImports: ['lucide-react', 'zod'],
   },
 
   // Headers for caching and security

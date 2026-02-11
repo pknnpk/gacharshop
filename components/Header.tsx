@@ -96,14 +96,18 @@ const Header = () => {
 
                     {/* User Icon */}
                     {session ? (
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-gray-700">Hi, {session.user?.name?.split(' ')[0]}</span>
+                        <Link href="/profile" className="flex items-center gap-2 hover:bg-gray-50 rounded-full py-1 px-2 transition-colors">
+                            <span className="text-sm text-gray-700">
+                                {language === 'th' ? 'สวัสดี' : 'Hi'}, {session.user?.name?.split(' ')[0]}
+                            </span>
                             {session.user?.image ? (
                                 <img src={session.user.image} alt="Profile" className="w-8 h-8 rounded-full" />
                             ) : (
-                                <User className="w-5 h-5 text-gray-600" />
+                                <div className="p-1 bg-gray-100 rounded-full">
+                                    <User className="w-5 h-5 text-gray-600" />
+                                </div>
                             )}
-                        </div>
+                        </Link>
                     ) : (
                         <Link href="/login" className="p-2 hover:bg-gray-100 rounded-full transition-colors" aria-label="Account">
                             <User className="w-5 h-5 text-gray-600" />
