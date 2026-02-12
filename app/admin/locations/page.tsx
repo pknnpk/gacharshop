@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShieldAlert, Plus, Edit2, Trash2, ChevronRight, ChevronDown, Folder, MapPin, Box } from 'lucide-react';
+import { Plus, Edit2, Trash2, ChevronRight, ChevronDown, Folder, MapPin, Box } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Location {

@@ -8,7 +8,6 @@ import StockHistory from '@/models/StockHistory';
 import InventoryLog from '@/models/InventoryLog';
 import { logAdminAction } from '@/lib/audit';
 import Order from '@/models/Order';
-import mongoose from 'mongoose';
 
 async function checkAdmin() {
     const session = await getServerSession(authOptions);
