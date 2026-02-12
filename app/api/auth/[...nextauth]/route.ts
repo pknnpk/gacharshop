@@ -25,10 +25,7 @@ export const authOptions: NextAuthOptions = {
             await connectToDatabase();
 
             try {
-                const fs = await import('fs');
-                const path = await import('path');
-                const logPath = path.join(process.cwd(), 'auth-debug.log');
-                const log = (msg: string) => fs.appendFileSync(logPath, new Date().toISOString() + ': ' + msg + '\n');
+                const log = (msg: string) => console.log(new Date().toISOString() + ': ' + msg);
 
                 log("signIn callback triggered");
                 const { email, name, image, id } = user;
@@ -97,10 +94,6 @@ export const authOptions: NextAuthOptions = {
                 return true;
             } catch (error) {
                 console.error("Error in signIn callback:", error);
-                const fs = await import('fs');
-                const path = await import('path');
-                const logPath = path.join(process.cwd(), 'auth-debug.log');
-                fs.appendFileSync(logPath, new Date().toISOString() + ': CRITICAL ERROR: ' + JSON.stringify(error, Object.getOwnPropertyNames(error)) + '\n');
                 return false;
             }
         },
