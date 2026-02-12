@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import StockHistory from '@/models/StockHistory';
 import InventoryLog from '@/models/InventoryLog';
 import { logAdminAction } from '@/lib/audit';
 import Order from '@/models/Order';
@@ -99,6 +100,75 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
 
+        if (type === 'transfer') {
+            const { targetLocationId } = body;
+            if (!targetLocationId) {
+                return NextResponse.json({ error: 'Target location required' }, { status: 400 });
+            }
+
+            // Find source index
+            const sourceIndex = product.inventory.findIndex(
+                (inv: any) => inv.location.toString() === locationId
+            );
+
+            if (sourceIndex === -1 || product.inventory[sourceIndex].quantity < quantity) {
+                return NextResponse.json({ error: 'Insufficient stock at source location' }, { status: 400 });
+            }
+
+            // Find target index
+            let targetIndex = product.inventory.findIndex(
+                (inv: any) => inv.location.toString() === targetLocationId
+            );
+
+            // Deduct from source
+            const sourceBefore = product.inventory[sourceIndex].quantity;
+            product.inventory[sourceIndex].quantity -= quantity;
+
+            // Add to target
+            let targetBefore = 0;
+            if (targetIndex > -1) {
+                targetBefore = product.inventory[targetIndex].quantity;
+                product.inventory[targetIndex].quantity += quantity;
+            } else {
+                product.inventory.push({
+                    location: targetLocationId,
+                    quantity: quantity
+                });
+                targetIndex = product.inventory.length - 1;
+            }
+
+            await product.save();
+
+            // Log History (Dual Entry)
+            const timestamp = new Date();
+            await StockHistory.create([
+                {
+                    product: productId,
+                    location: locationId,
+                    user: adminUser.id,
+                    action: 'transfer',
+                    change: -quantity,
+                    previousStock: sourceBefore,
+                    newStock: sourceBefore - quantity,
+                    reason: `Transfer to ${targetLocationId} - ${reason || ''}`,
+                    timestamp
+                },
+                {
+                    product: productId,
+                    location: targetLocationId,
+                    user: adminUser.id,
+                    action: 'receive',
+                    change: quantity,
+                    previousStock: targetBefore,
+                    newStock: targetBefore + quantity,
+                    reason: `Transfer from ${locationId} - ${reason || ''}`,
+                    timestamp
+                }
+            ]);
+
+            return NextResponse.json({ success: true, message: 'Transfer successful' });
+        }
+
         // Initialize inventory array if needed
         if (!product.inventory) {
             product.inventory = [];
@@ -108,7 +178,7 @@ export async function POST(req: NextRequest) {
         let beforeBalance = 0;
         let newBalance = 0;
 
-        // If locationId is provided, update specific location
+        // If locationId is provided, update specific location (EXISTING LOGIC)
         if (locationId) {
             const locationIndex = product.inventory.findIndex(
                 (inv: any) => inv.location.toString() === locationId
@@ -198,6 +268,23 @@ export async function POST(req: NextRequest) {
             details: { locationId, change, newBalance, reason },
             req
         });
+
+        // Create StockHistory Record
+        try {
+            await StockHistory.create({
+                product: productId,
+                location: locationId || undefined,
+                user: adminUser.id,
+                action: 'adjustment',
+                change: change,
+                previousStock: beforeBalance,
+                newStock: newBalance,
+                reason: reason || 'Manual adjustment',
+                timestamp: new Date()
+            });
+        } catch (historyError) {
+            console.error('Failed to create history record:', historyError);
+        }
 
         return NextResponse.json({
             success: true,
