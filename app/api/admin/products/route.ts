@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectToDatabase from '@/lib/db';
+import Category from '@/models/Category'; // Register Category model BEFORE Product
 import Product from '@/models/Product';
 import slugify from 'slugify';
 import { logAdminAction } from '@/lib/audit';

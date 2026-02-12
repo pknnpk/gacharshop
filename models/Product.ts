@@ -1,5 +1,7 @@
 
 import mongoose, { Schema, model, models } from 'mongoose';
+import '@/models/Category'; // Ensure Category model is registered
+import '@/models/Location'; // Ensure Location model is registered
 
 const ProductSchema = new Schema(
     {

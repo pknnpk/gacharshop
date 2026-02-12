@@ -34,10 +34,15 @@ export default function ProductList() {
             });
             const res = await fetch(`/api/admin/products?${params}`);
             const data = await res.json();
-            setProducts(data.products);
-            setPagination(data.pagination);
-        } catch (error) {
-            toast.error('Failed to load products');
+
+            if (!res.ok) throw new Error(data.error || 'Failed to fetch products');
+
+            setProducts(data.products || []);
+            setPagination(data.pagination || null);
+        } catch (error: any) {
+            console.error('Fetch error:', error);
+            toast.error(error.message || 'Failed to load products');
+            setProducts([]);
         } finally {
             setLoading(false);
         }
@@ -138,8 +143,8 @@ export default function ProductList() {
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <span className={`px-2 py-1 text-xs rounded-full ${product.status === 'active' ? 'bg-green-100 text-green-700' :
-                                                product.status === 'draft' ? 'bg-gray-100 text-gray-700' :
-                                                    'bg-red-100 text-red-700'
+                                            product.status === 'draft' ? 'bg-gray-100 text-gray-700' :
+                                                'bg-red-100 text-red-700'
                                             }`}>
                                             {product.status === 'active' ? 'พร้อมขาย' :
                                                 product.status === 'draft' ? 'แบบร่าง' : 'ระงับ'}

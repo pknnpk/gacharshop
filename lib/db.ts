@@ -1,6 +1,14 @@
 
 import mongoose from 'mongoose';
 
+// Register models to ensure they are available for populate refs
+import '@/models/Category';
+import '@/models/Location';
+import '@/models/Product';
+import '@/models/User'; // Good practice to include others
+import '@/models/Order';
+import '@/models/StockHistory';
+
 const MONGODB_URI = process.env.MONGODB_URI;
 
 

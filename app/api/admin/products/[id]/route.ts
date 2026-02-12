@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectToDatabase from '@/lib/db';
+import Category from '@/models/Category'; // Register Category model BEFORE Product
 import Product from '@/models/Product';
 import { logAdminAction } from '@/lib/audit';
 import StockHistory from '@/models/StockHistory';
@@ -16,14 +17,21 @@ async function checkAdmin() {
     return session.user;
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+// Helper to safely get ID from params
+async function getId(params: any): Promise<string> {
+    const p = await params;
+    return p.id;
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectToDatabase();
     if (!await checkAdmin()) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        const product = await Product.findById(params.id).populate('category');
+        const id = await getId(params);
+        const product = await Product.findById(id).populate('category');
         if (!product) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
@@ -33,7 +41,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectToDatabase();
     const adminUser = await checkAdmin();
     if (!adminUser) {
@@ -41,6 +49,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     try {
+        const id = await getId(params);
         const body = await req.json();
         const { _id, ...updateData } = body; // Exclude _id from update
 
@@ -53,7 +62,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             if (checks.length > 0) {
                 const existing = await Product.findOne({
                     $and: [
-                        { _id: { $ne: params.id } },
+                        { _id: { $ne: id } },
                         { $or: checks }
                     ]
                 });
@@ -63,7 +72,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             }
         }
 
-        const product = await Product.findByIdAndUpdate(params.id, updateData, { new: true });
+        const product = await Product.findByIdAndUpdate(id, updateData, { new: true });
 
         if (!product) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -72,7 +81,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         await logAdminAction({
             action: 'UPDATE_PRODUCT',
             entity: 'Product',
-            entityId: params.id,
+            entityId: id,
             performedBy: adminUser.id,
             details: updateData,
             req
@@ -84,7 +93,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     await connectToDatabase();
     const adminUser = await checkAdmin();
     if (!adminUser) {
@@ -92,21 +101,19 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     }
 
     try {
+        const id = await getId(params);
         // Safety checks
-        const hasHistory = await StockHistory.exists({ product: params.id });
+        const hasHistory = await StockHistory.exists({ product: id });
         if (hasHistory) {
             return NextResponse.json({ error: 'Cannot delete product with stock history. Archive it instead.' }, { status: 400 });
         }
 
-        // Check active orders? (Optional but recommended)
-        // This is a simple check; real-world might be more complex
-
-        await Product.findByIdAndDelete(params.id);
+        await Product.findByIdAndDelete(id);
 
         await logAdminAction({
             action: 'DELETE_PRODUCT',
             entity: 'Product',
-            entityId: params.id,
+            entityId: id,
             performedBy: adminUser.id,
             details: {},
             req
