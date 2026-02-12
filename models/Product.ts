@@ -36,6 +36,10 @@ const ProductSchema = new Schema(
             ref: 'Category',
             required: true,
         },
+        additionalCategories: [{
+            type: Schema.Types.ObjectId,
+            ref: 'Category',
+        }],
         stock: {
             type: Number,
             required: true,

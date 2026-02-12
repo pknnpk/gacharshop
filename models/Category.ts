@@ -19,6 +19,23 @@ const CategorySchema = new Schema(
         image: {
             type: String,
         },
+        parent: {
+            type: Schema.Types.ObjectId,
+            ref: 'Category',
+            default: null,
+        },
+        level: {
+            type: Number,
+            default: 0,
+        },
+        ancestors: [{
+            _id: {
+                type: Schema.Types.ObjectId,
+                ref: 'Category',
+            },
+            name: String,
+            slug: String,
+        }],
     },
     {
         timestamps: true,
