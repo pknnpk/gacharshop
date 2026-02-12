@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
+import { APP_VERSION, BUILD_NUMBER } from '@/lib/version';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -133,9 +134,12 @@ export default function AdminSidebar() {
                     <div className="pt-4 border-t border-gray-100">
                         <div className="px-4 py-4 mb-2 bg-gray-50 rounded-xl">
                             <p className="text-xs text-gray-500 uppercase font-bold mb-1 tracking-wider">สถานะระบบ</p>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 mb-2">
                                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                                 <span className="text-xs text-gray-700 font-medium">ปกติ</span>
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-mono border-t border-gray-200 pt-2 mt-2">
+                                v{APP_VERSION} (Build {BUILD_NUMBER})
                             </div>
                         </div>
                         <button
