@@ -1,0 +1,119 @@
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import connectToDatabase from '@/lib/db';
+import Product from '@/models/Product';
+import { logAdminAction } from '@/lib/audit';
+import StockHistory from '@/models/StockHistory';
+import Order from '@/models/Order';
+
+async function checkAdmin() {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user?.role !== 'admin') {
+        return null;
+    }
+    return session.user;
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+    await connectToDatabase();
+    if (!await checkAdmin()) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const product = await Product.findById(params.id).populate('category');
+        if (!product) {
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+        }
+        return NextResponse.json(product);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+    await connectToDatabase();
+    const adminUser = await checkAdmin();
+    if (!adminUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const body = await req.json();
+        const { _id, ...updateData } = body; // Exclude _id from update
+
+        // Prevent SKU/Barcode duplication
+        if (updateData.sku || updateData.barcode) {
+            const checks = [];
+            if (updateData.sku) checks.push({ sku: updateData.sku });
+            if (updateData.barcode) checks.push({ barcode: updateData.barcode });
+
+            if (checks.length > 0) {
+                const existing = await Product.findOne({
+                    $and: [
+                        { _id: { $ne: params.id } },
+                        { $or: checks }
+                    ]
+                });
+                if (existing) {
+                    return NextResponse.json({ error: 'SKU or Barcode already exists' }, { status: 400 });
+                }
+            }
+        }
+
+        const product = await Product.findByIdAndUpdate(params.id, updateData, { new: true });
+
+        if (!product) {
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+        }
+
+        await logAdminAction({
+            action: 'UPDATE_PRODUCT',
+            entity: 'Product',
+            entityId: params.id,
+            performedBy: adminUser.id,
+            details: updateData,
+            req
+        });
+
+        return NextResponse.json(product);
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+    await connectToDatabase();
+    const adminUser = await checkAdmin();
+    if (!adminUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        // Safety checks
+        const hasHistory = await StockHistory.exists({ product: params.id });
+        if (hasHistory) {
+            return NextResponse.json({ error: 'Cannot delete product with stock history. Archive it instead.' }, { status: 400 });
+        }
+
+        // Check active orders? (Optional but recommended)
+        // This is a simple check; real-world might be more complex
+
+        await Product.findByIdAndDelete(params.id);
+
+        await logAdminAction({
+            action: 'DELETE_PRODUCT',
+            entity: 'Product',
+            entityId: params.id,
+            performedBy: adminUser.id,
+            details: {},
+            req
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}

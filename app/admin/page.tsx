@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Users, BarChart, Settings, ShieldAlert, MapPin } from 'lucide-react';
+import { Package, Users, BarChart, Settings, ShieldAlert, MapPin, Box } from 'lucide-react';
 
 export default function AdminDashboard() {
     const { data: session, status } = useSession();
@@ -42,14 +42,14 @@ export default function AdminDashboard() {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Inventory Management Card */}
-                <Link href="/admin/inventory" className="block group">
+                {/* Product Management Card */}
+                <Link href="/admin/products" className="block group">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow h-full">
                         <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
                             <Package className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-2">คลังสินค้า</h2>
-                        <p className="text-gray-500 text-sm">จัดการสต็อกสินค้าและปรับยอด</p>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">จัดการสินค้า</h2>
+                        <p className="text-gray-500 text-sm">สร้าง เเก้ไข และจัดการรายการสินค้า</p>
                     </div>
                 </Link>
 
@@ -61,6 +61,17 @@ export default function AdminDashboard() {
                         </div>
                         <h2 className="text-xl font-semibold text-gray-900 mb-2">จัดการสถานที่</h2>
                         <p className="text-gray-500 text-sm">จัดการโครงสร้างคลังสินค้า (Warehouse, Shelf, Bin)</p>
+                    </div>
+                </Link>
+
+                {/* Inventory Management Card */}
+                <Link href="/admin/inventory" className="block group">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow h-full">
+                        <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                            <Box className="w-6 h-6" /> {/* Changed icon to Box to distinguish from Package */}
+                        </div>
+                        <h2 className="text-xl font-semibold text-gray-900 mb-2">คลังสินค้า (Stock)</h2>
+                        <p className="text-gray-500 text-sm">ดูภาพรวมสต็อกและปรับยอดด่วน</p>
                     </div>
                 </Link>
 

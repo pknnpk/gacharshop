@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectToDatabase from '@/lib/db';
 import Product from '@/models/Product';
+import slugify from 'slugify';
 import { logAdminAction } from '@/lib/audit';
 
 async function checkAdmin() {
@@ -12,6 +13,59 @@ async function checkAdmin() {
         return null;
     }
     return session.user;
+}
+
+export async function GET(req: NextRequest) {
+    await connectToDatabase();
+    if (!await checkAdmin()) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const { searchParams } = new URL(req.url);
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const search = searchParams.get('search') || '';
+        const status = searchParams.get('status');
+        const category = searchParams.get('category');
+
+        const query: any = {};
+
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { sku: { $regex: search, $options: 'i' } },
+                { barcode: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        if (status) query.status = status;
+        if (category) query.category = category;
+
+        const skip = (page - 1) * limit;
+
+        const [products, total] = await Promise.all([
+            Product.find(query)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate('category', 'name')
+                .lean(),
+            Product.countDocuments(query)
+        ]);
+
+        return NextResponse.json({
+            products,
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 }
 
 export async function POST(req: NextRequest) {
@@ -25,19 +79,35 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
 
         // Basic validation
-        if (!body.name || !body.sku || !body.price) {
+        if (!body.name || !body.price || !body.category) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        const existingProduct = await Product.findOne({
-            $or: [{ sku: body.sku }, { slug: body.slug }]
-        });
-
-        if (existingProduct) {
-            return NextResponse.json({ error: 'Product with this SKU or Slug already exists' }, { status: 400 });
+        // Auto-generate slug if not provided
+        let slug = body.slug;
+        if (!slug) {
+            slug = slugify(body.name, { lower: true, strict: true });
         }
 
-        const product = await Product.create(body);
+        // Check for existing slug, SKU, or Barcode
+        const checks: any[] = [{ slug }];
+        if (body.sku) checks.push({ sku: body.sku });
+        if (body.barcode) checks.push({ barcode: body.barcode });
+
+        const existing = await Product.findOne({
+            $or: checks
+        });
+
+        if (existing) {
+            if (existing.slug === slug) return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
+            if (body.sku && existing.sku === body.sku) return NextResponse.json({ error: 'SKU already exists' }, { status: 400 });
+            if (body.barcode && existing.barcode === body.barcode) return NextResponse.json({ error: 'Barcode already exists' }, { status: 400 });
+        }
+
+        const product = await Product.create({
+            ...body,
+            slug
+        });
 
         await logAdminAction({
             action: 'CREATE_PRODUCT',
@@ -48,52 +118,13 @@ export async function POST(req: NextRequest) {
             req
         });
 
-        return NextResponse.json(product, { status: 201 });
+        return NextResponse.json({ success: true, product }, { status: 201 });
+
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-}
-
-export async function PUT(req: NextRequest) {
-    await connectToDatabase();
-    const adminUser = await checkAdmin();
-    if (!adminUser) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    try {
-        const body = await req.json();
-        const { _id, ...updateData } = body;
-
-        if (!_id) {
-            return NextResponse.json({ error: 'Missing Product ID' }, { status: 400 });
+        // Handle duplicate key error standard from Mongo
+        if (error.code === 11000) {
+            return NextResponse.json({ error: 'Duplicate field value entered' }, { status: 400 });
         }
-
-        // prevent updating SKU to a duplicate
-        if (updateData.sku) {
-            const existing = await Product.findOne({ sku: updateData.sku, _id: { $ne: _id } });
-            if (existing) {
-                return NextResponse.json({ error: 'SKU already exists' }, { status: 400 });
-            }
-        }
-
-        const product = await Product.findByIdAndUpdate(_id, updateData, { new: true });
-
-        if (!product) {
-            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-        }
-
-        await logAdminAction({
-            action: 'UPDATE_PRODUCT',
-            entity: 'Product',
-            entityId: _id,
-            performedBy: adminUser.id,
-            details: updateData,
-            req
-        });
-
-        return NextResponse.json(product);
-    } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

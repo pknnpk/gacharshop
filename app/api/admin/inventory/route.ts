@@ -233,14 +233,16 @@ export async function POST(req: NextRequest) {
 
         // Update total stock based on all locations + unassigned stock logic if any
         // For now, we sync total stock to be sum of all locations if inventory exists
-        if (product.inventory.length > 0) {
+        // Update total stock based on all locations + unassigned stock logic if any
+        // For now, we sync total stock to be sum of all locations if inventory exists
+        // FIX: If we just performed a global adjustment (!locationId), we should NOT overwrite it with sum(inventory)
+        // because that would revert the change if there are any inventory items.
+
+        if (locationId && product.inventory.length > 0) {
             product.stock = product.inventory.reduce((acc: number, curr: any) => acc + curr.quantity, 0);
-        } else {
-            // If no inventory locations, just use the calculated newBalance from the "Global" block
-            // But wait, the Global block calculated newBalance based on product.stock
-            if (!locationId) {
-                product.stock = newBalance;
-            }
+        } else if (!locationId) {
+            // We already updated product.stock in the "Global" block above (lines 241-243)
+            // So we don't need to do anything here.
         }
 
         await product.save();

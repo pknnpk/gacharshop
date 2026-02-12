@@ -14,7 +14,8 @@ import {
     X,
     ShieldAlert,
     Activity,
-    Store
+    Store,
+    Box
 } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
@@ -31,7 +32,8 @@ export default function AdminSidebar() {
 
     const navItems = [
         { name: 'ภาพรวม', path: '/admin', icon: LayoutDashboard },
-        { name: 'คลังสินค้า', path: '/admin/inventory', icon: Package },
+        { name: 'สินค้า', path: '/admin/products', icon: Package },
+        { name: 'คลังสินค้า', path: '/admin/inventory', icon: Box },
         { name: 'สถานที่', path: '/admin/locations', icon: MapPin },
         { name: 'ผู้ใช้งาน', path: '/admin/users', icon: Users, disabled: true },
         { name: 'สถิติ', path: '/admin/analytics', icon: BarChart, disabled: true },

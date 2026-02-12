@@ -27,6 +27,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hot-toast": "^2.6.0",
+    "slugify": "^1.6.6",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.3.6"
   },
@@ -35,9 +36,9 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.16",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/nodemailer": "^6.4.16",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "happy-dom": "^14.12.3",

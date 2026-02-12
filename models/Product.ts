@@ -69,6 +69,32 @@ const ProductSchema = new Schema(
             type: Number,
             default: 0, // 0 = unlimited
         },
+        costPrice: {
+            type: Number,
+            default: 0,
+        },
+        barcode: {
+            type: String,
+            sparse: true,
+            unique: true,
+        },
+        brand: {
+            type: String,
+        },
+        tags: [String],
+        weight: {
+            type: Number, // in grams
+            default: 0,
+        },
+        dimensions: {
+            length: { type: Number, default: 0 },
+            width: { type: Number, default: 0 },
+            height: { type: Number, default: 0 },
+        },
+        isPhysical: {
+            type: Boolean,
+            default: true,
+        },
         status: {
             type: String,
             enum: ['active', 'draft', 'archived'],

@@ -44,14 +44,16 @@ export default function InventoryDashboard() {
         if (!selectedProduct) return;
 
         try {
-            const change = adjustmentType === 'add' ? adjustmentQty : -adjustmentQty;
+            // const change = adjustmentType === 'add' ? adjustmentQty : -adjustmentQty;
+            const type = adjustmentType === 'add' ? 'add' : 'subtract';
 
             const res = await fetch('/api/admin/inventory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     productId: selectedProduct._id,
-                    change: change,
+                    quantity: adjustmentQty,
+                    type: type,
                     reason: adjustmentReason || (adjustmentType === 'add' ? 'Manual Restock' : 'Manual Removal')
                 })
             });
