@@ -41,7 +41,7 @@ export default function BottomNav() {
     ];
 
     // Hide on profile sub-pages
-    if (pathname.startsWith('/profile') && pathname !== '/profile') {
+    if ((pathname.startsWith('/profile') && pathname !== '/profile') || pathname.startsWith('/admin')) {
         return null; // Return null to render nothing
     }
 

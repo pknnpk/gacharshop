@@ -25,14 +25,21 @@ export async function GET(req: NextRequest) {
     }
 
     try {
-        // Fetch all products with inventory populated
-        // Fetch all products with inventory populated
-        const products = await Product.find({})
+        const { searchParams } = new URL(req.url);
+        const locationId = searchParams.get('locationId');
+
+        let query = {};
+        if (locationId) {
+            query = { 'inventory.location': locationId };
+        }
+
+        // Fetch products
+        const products = await Product.find(query)
             .populate('inventory.location')
             .sort({ updatedAt: -1 })
             .lean();
 
-        // Calculate reserved stock from active orders (reserved or paid but not yet shipped/completed)
+        // Calculate reserved stock globally (as orders aren't location-specific yet)
         const activeOrders = await Order.find({
             status: { $in: ['reserved', 'paid'] }
         }).select('items');
@@ -48,10 +55,20 @@ export async function GET(req: NextRequest) {
         const productsWithStock = products.map((p: any) => {
             const reserved = reservedCounts[p._id.toString()] || 0;
             const totalStock = p.stock || 0;
+
+            let locationStock = 0;
+            if (locationId && p.inventory) {
+                const inv = p.inventory.find((i: any) => i.location._id?.toString() === locationId || i.location?.toString() === locationId);
+                locationStock = inv ? inv.quantity : 0;
+            }
+
             return {
                 ...p,
                 totalStock,
+                locationStock: locationId ? locationStock : undefined,
                 reserved,
+                // If filtered by location, 'available' is checking physical stock there. 
+                // Since reservations are global, showing simple on-hand is safer for now.
                 available: totalStock - reserved
             };
         });

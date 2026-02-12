@@ -22,6 +22,11 @@ const Header = () => {
     // We use a check to see if we are on these pages
     const isHeaderHiddenMobile = hideHeaderOnMobile.some(path => pathname.startsWith(path));
 
+    // Hide Header completely on admin pages
+    if (pathname.startsWith('/admin')) {
+        return null;
+    }
+
     return (
         <header className={`sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-md ${isHeaderHiddenMobile ? 'hidden md:block' : ''}`}>
             <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">

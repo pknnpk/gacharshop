@@ -18,6 +18,15 @@ export async function GET(req: NextRequest) {
     await connectToDatabase();
     // Allow reading locations for internal use, but ensuring admin for management
     // For listing, we can just return all
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+        const location = await Location.findById(id).populate('parent');
+        if (!location) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        return NextResponse.json(location);
+    }
+
     const locations = await Location.find({}).sort({ name: 1 });
     return NextResponse.json(locations);
 }
@@ -83,5 +92,40 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json(location);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+}
+export async function DELETE(req: NextRequest) {
+    await connectToDatabase();
+    const adminUser = await checkAdmin();
+    if (!adminUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+
+    try {
+        // Optional: Check if it has children
+        const hasChildren = await Location.exists({ parent: id });
+        if (hasChildren) {
+            // For strictness we could prevent delete, but for now we'll allow cascade or leave orphans.
+            // Best practice is to prevent:
+            return NextResponse.json({ error: 'Cannot delete location with active sub-locations' }, { status: 400 });
+        }
+
+        await Location.findByIdAndDelete(id);
+
+        await logAdminAction({
+            action: 'DELETE_LOCATION',
+            entity: 'Location',
+            entityId: id,
+            performedBy: adminUser.id,
+            details: {},
+            req
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

@@ -16,7 +16,9 @@ const Footer = () => {
 
     // Hide footer on profile sub-pages (e.g. /profile/addresses, /profile/addresses/add)
     // "remove footer from sub menu pages" - so keep it on main /profile
-    if (pathname?.startsWith('/profile/') && pathname !== '/profile') {
+    // Hide footer on profile sub-pages (e.g. /profile/addresses, /profile/addresses/add)
+    // "remove footer from sub menu pages" - so keep it on main /profile
+    if ((pathname?.startsWith('/profile/') && pathname !== '/profile') || pathname?.startsWith('/admin')) {
         return null;
     }
 
