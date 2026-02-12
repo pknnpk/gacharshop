@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { dictionary } from '../dictionaries';
+import { APP_VERSION, BUILD_NUMBER } from '@/lib/version';
 
 const Footer = () => {
     const { language } = useLanguage();
@@ -94,6 +95,7 @@ const Footer = () => {
 
                 <div className="mt-12 pt-8 border-t text-center text-sm text-gray-500">
                     <p>&copy; {new Date().getFullYear()} GacharShop. {t.rights}</p>
+                    <p className="text-[10px] text-gray-400 mt-2 font-mono">v{APP_VERSION} (Build {BUILD_NUMBER})</p>
                 </div>
             </div>
         </footer>
