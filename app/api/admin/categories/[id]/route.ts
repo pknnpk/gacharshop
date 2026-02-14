@@ -61,9 +61,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             image: body.image
         };
 
+        if (body.slug?.trim()) {
+            updates.slug = body.slug.trim();
+        } else if (body.name) {
+            let newSlug = slugify(body.name, { lower: true, strict: false });
+            if (!newSlug) newSlug = `category-${Date.now()}`;
+            updates.slug = newSlug;
+        }
+
         if (body.name) {
             updates.name = body.name;
-            updates.slug = slugify(body.name, { lower: true, strict: true });
         }
 
         // Handle Parent Change

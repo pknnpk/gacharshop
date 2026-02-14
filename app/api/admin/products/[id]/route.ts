@@ -53,9 +53,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const body = await req.json();
         const { _id, ...updateData } = body; // Exclude _id from update
 
-        // Prevent SKU/Barcode duplication
-        if (updateData.sku || updateData.barcode) {
+        // Prevent Slug/SKU/Barcode duplication
+        if (updateData.slug || updateData.sku || updateData.barcode) {
             const checks = [];
+            if (updateData.slug) checks.push({ slug: updateData.slug });
             if (updateData.sku) checks.push({ sku: updateData.sku });
             if (updateData.barcode) checks.push({ barcode: updateData.barcode });
 
@@ -67,7 +68,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
                     ]
                 });
                 if (existing) {
-                    return NextResponse.json({ error: 'SKU or Barcode already exists' }, { status: 400 });
+                    if (updateData.slug && existing.slug === updateData.slug) return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
+                    if (updateData.sku && existing.sku === updateData.sku) return NextResponse.json({ error: 'SKU already exists' }, { status: 400 });
+                    if (updateData.barcode && existing.barcode === updateData.barcode) return NextResponse.json({ error: 'Barcode already exists' }, { status: 400 });
                 }
             }
         }

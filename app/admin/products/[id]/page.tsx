@@ -13,7 +13,9 @@ import {
     DollarSign,
     Box,
     Image as ImageIcon,
-    Loader2
+    Loader2,
+    Upload,
+    X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -25,6 +27,7 @@ export default function ProductEditor() {
 
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [product, setProduct] = useState<any>({
         name: '',
         slug: '',
@@ -213,6 +216,18 @@ export default function ProductEditor() {
                                     value={product.name}
                                     onChange={e => handleChange('name', e.target.value)}
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL)</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 outline-none font-mono text-sm"
+                                    value={product.slug}
+                                    onChange={e => handleChange('slug', e.target.value)}
+                                    placeholder="auto-generated-from-name"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Leave blank to auto-generate from name</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -425,39 +440,138 @@ export default function ProductEditor() {
                     {activeTab === 'media' && (
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4 animate-in fade-in">
                             <h2 className="text-lg font-bold mb-4">รูปภาพสินค้า</h2>
-                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50 text-gray-500">
-                                <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                                <p>Image upload functionality coming soon.</p>
-                                <p className="text-xs mt-1">For now, images are handled via external URLs or separate media manager.</p>
+
+                            {/* Drop Zone */}
+                            <div
+                                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${uploading ? 'bg-blue-50 border-blue-300' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                                    }`}
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={async (e) => {
+                                    e.preventDefault();
+                                    if (uploading) return;
+
+                                    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+                                    if (files.length === 0) return toast.error('Please drop image files');
+
+                                    setUploading(true);
+                                    const uploadToast = toast.loading(`Uploading ${files.length} images...`);
+
+                                    try {
+                                        const newImages = [...product.images];
+
+                                        for (const file of files) {
+                                            const formData = new FormData();
+                                            formData.append('file', file);
+
+                                            const res = await fetch('/api/admin/upload', {
+                                                method: 'POST',
+                                                body: formData
+                                            });
+
+                                            if (!res.ok) throw new Error('Upload failed');
+                                            const data = await res.json();
+                                            newImages.push(data.url);
+                                        }
+
+                                        handleChange('images', newImages);
+                                        toast.success('Upload complete');
+                                    } catch (error) {
+                                        toast.error('Upload failed');
+                                        console.error(error);
+                                    } finally {
+                                        setUploading(false);
+                                        toast.dismiss(uploadToast);
+                                    }
+                                }}
+                            >
+                                <div className="flex flex-col items-center gap-2 cursor-pointer">
+                                    <label htmlFor="file-upload" className="cursor-pointer">
+                                        {uploading ? (
+                                            <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+                                        ) : (
+                                            <Upload className="w-10 h-10 text-gray-400" />
+                                        )}
+                                    </label>
+                                    <p className="text-gray-600 font-medium">
+                                        {uploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                                    </p>
+                                    <p className="text-xs text-gray-400">SVG, PNG, JPG or GIF (max. 5MB)</p>
+                                    <input
+                                        id="file-upload"
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                            if (!e.target.files?.length) return;
+                                            setUploading(true);
+                                            const uploadToast = toast.loading('Uploading...');
+
+                                            try {
+                                                const newImages = [...product.images];
+                                                for (let i = 0; i < e.target.files.length; i++) {
+                                                    const file = e.target.files[i];
+                                                    const formData = new FormData();
+                                                    formData.append('file', file);
+
+                                                    const res = await fetch('/api/admin/upload', {
+                                                        method: 'POST',
+                                                        body: formData
+                                                    });
+
+                                                    if (!res.ok) throw new Error('Upload failed');
+                                                    const data = await res.json();
+                                                    newImages.push(data.url);
+                                                }
+                                                handleChange('images', newImages);
+                                                toast.success('Upload complete');
+                                            } catch (error) {
+                                                toast.error('Upload failed');
+                                            } finally {
+                                                setUploading(false);
+                                                toast.dismiss(uploadToast);
+                                                // Reset input
+                                                e.target.value = '';
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </div>
 
-                            {/* Temporary URL input for images */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Image URL (Temporary)</label>
+                            {/* URL Input (Alternative) */}
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-mono">URL</span>
                                 <input
                                     type="text"
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 outline-none"
-                                    placeholder="https://example.com/image.jpg"
+                                    className="w-full pl-12 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 outline-none text-sm"
+                                    placeholder="Or paste an image URL here..."
                                     onBlur={(e) => {
                                         if (e.target.value && !product.images.includes(e.target.value)) {
                                             handleChange('images', [...product.images, e.target.value]);
                                             e.target.value = '';
                                         }
                                     }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                        }
+                                    }}
                                 />
-                                <p className="text-xs text-gray-400 mt-1">Paste URL and click outside to add.</p>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-4 mt-4">
+                            {/* Image Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
                                 {product.images.map((img: string, idx: number) => (
-                                    <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border">
+                                    <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border bg-gray-50">
                                         <img src={img} alt="" className="w-full h-full object-cover" />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                                         <button
                                             type="button"
                                             onClick={() => handleChange('images', product.images.filter((_: string, i: number) => i !== idx))}
-                                            className="absolute top-1 right-1 bg-white/80 p-1 rounded-full text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm hover:bg-white"
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <X className="w-4 h-4" />
                                         </button>
                                     </div>
                                 ))}

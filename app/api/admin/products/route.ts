@@ -85,9 +85,10 @@ export async function POST(req: NextRequest) {
         }
 
         // Auto-generate slug if not provided
-        let slug = body.slug;
+        let slug = body.slug?.trim();
         if (!slug) {
-            slug = slugify(body.name, { lower: true, strict: true });
+            slug = slugify(body.name, { lower: true, strict: false });
+            if (!slug) slug = `product-${Date.now()}`;
         }
 
         // Check for existing slug, SKU, or Barcode

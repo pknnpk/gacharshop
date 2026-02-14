@@ -28,6 +28,7 @@ export default function CategoriesPage() {
     // Form State
     const [formData, setFormData] = useState({
         name: '',
+        slug: '',
         description: '',
         parent: ''
     });
@@ -80,7 +81,7 @@ export default function CategoriesPage() {
             toast.success(editingCategory ? 'Category updated' : 'Category created');
             setIsModalOpen(false);
             setEditingCategory(null);
-            setFormData({ name: '', description: '', parent: '' });
+            setFormData({ name: '', slug: '', description: '', parent: '' });
             fetchCategories();
         } catch (error: any) {
             toast.error(error.message);
@@ -111,6 +112,7 @@ export default function CategoriesPage() {
         setEditingCategory(cat);
         setFormData({
             name: cat.name,
+            slug: cat.slug || '',
             description: cat.description || '',
             parent: cat.parent?._id || ''
         });
@@ -132,7 +134,7 @@ export default function CategoriesPage() {
                 <button
                     onClick={() => {
                         setEditingCategory(null);
-                        setFormData({ name: '', description: '', parent: '' });
+                        setFormData({ name: '', slug: '', description: '', parent: '' });
                         setIsModalOpen(true);
                     }}
                     className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
@@ -213,6 +215,18 @@ export default function CategoriesPage() {
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL)</label>
+                                <input
+                                    type="text"
+                                    value={formData.slug}
+                                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                                    placeholder="auto-generated-from-name"
+                                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                                />
+                                <p className="text-xs text-gray-400 mt-1">Leave blank to auto-generate from name</p>
                             </div>
 
                             <div>

@@ -66,7 +66,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
         }
 
-        const slug = slugify(body.name, { lower: true, strict: true });
+        // Use provided slug or auto-generate from name
+        let slug = body.slug?.trim();
+        if (!slug) {
+            slug = slugify(body.name, { lower: true, strict: false });
+            if (!slug) slug = `category-${Date.now()}`;
+        }
 
         // Check duplicate
         const existing = await Category.findOne({ slug });
